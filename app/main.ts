@@ -50,7 +50,23 @@ async function main() {
   console.error("Logs from your program will appear here!");
 
   // TODO: Uncomment the lines below to pass the first stage
-  console.log(response.choices[0].message.content);
+
+  const toolCalls = response.choices[0].message.tool_calls;
+  if (toolCalls) {
+    const firstToolCall = toolCalls[0];
+    if (firstToolCall.type == "function") {
+      if ((firstToolCall.function.name = "Read")) {
+        const fileparams = JSON.parse(firstToolCall.function.arguments);
+        if (fileparams.file_path) {
+          const fileToRead = Bun.file(fileparams.file_path);
+          const data = await fileToRead.text();
+          console.log(data);
+        }
+      }
+    }
+  } else {
+    console.log(response.choices[0].message.content);
+  }
 }
 
 main();
