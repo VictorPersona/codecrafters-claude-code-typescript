@@ -1,3 +1,4 @@
+import { file } from "bun";
 import OpenAI from "openai";
 import type { ChatCompletionMessageParam } from "openai/resources";
 
@@ -22,8 +23,8 @@ async function main() {
   const message: ChatCompletionMessageParam[] = [
     { role: "user", content: prompt },
   ];
-  async function ReadFile(file_path: string) {
-    const fileToRead = Bun.file(file_path);
+  async function ReadFile(fileparams: { file_path: string }) {
+    const fileToRead = Bun.file(fileparams.file_path);
     const data = await fileToRead.text();
     return data;
   }
