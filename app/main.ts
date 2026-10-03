@@ -59,8 +59,9 @@ async function main() {
       content: response.choices[0].message.content,
     });
 
+    console.error(response);
     const tool_calls = response.choices[0].message.tool_calls;
-    if (!tool_calls) {
+    if (!tool_calls || tool_calls.length == 0) {
       console.log(response.choices[0].message);
       break;
     }
