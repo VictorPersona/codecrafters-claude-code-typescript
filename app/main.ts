@@ -143,7 +143,7 @@ async function main() {
     const splitedPrompt = prompt.split(" ");
     let ARGUMENTS = "";
     for (let i = 1; i < splitedPrompt.length; i++) {
-      argsToLoad[String(i)] = splitedPrompt[i];
+      argsToLoad[String(i - 1)] = splitedPrompt[i];
       ARGUMENTS += splitedPrompt[i] + " ";
     }
     ARGUMENTS = ARGUMENTS.trim();
