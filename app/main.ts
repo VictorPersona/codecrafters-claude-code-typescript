@@ -152,8 +152,13 @@ async function main() {
   };
 
   if (prompt.startsWith("/")) {
-    const endIndex = prompt.indexOf(" ", 1);
-    const skill = prompt.slice(1, endIndex + 1);
+    const firstSpaceIndex = prompt.indexOf(" ");
+
+    const skill =
+      firstSpaceIndex === -1
+        ? prompt.slice(1)
+        : prompt.slice(1, firstSpaceIndex);
+
     console.error(skill);
     console.error(skillNames);
     if (skillNames.includes(skill)) {
