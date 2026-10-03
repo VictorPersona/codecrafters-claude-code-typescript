@@ -20,7 +20,7 @@ async function main() {
     baseURL: baseURL,
   });
 
-  const message: ChatCompletionMessageParam[] = [
+  let message: ChatCompletionMessageParam[] = [
     { role: "user", content: prompt },
   ];
   async function ReadFile(fileparams: { file_path: string }) {
@@ -57,6 +57,7 @@ async function main() {
     message.push({
       role: "assistant",
       content: response.choices[0].message.content,
+      tool_calls: response.choices[0].message.tool_calls,
     });
 
     console.error(response);
