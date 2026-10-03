@@ -61,7 +61,7 @@ async function main() {
 
     const tool_calls = response.choices[0].message.tool_calls;
     if (!tool_calls) {
-      console.log(response.choices[0].message.content);
+      console.log(response.choices[0].message);
       break;
     }
     for (let index = 0; index < tool_calls.length; index++) {
