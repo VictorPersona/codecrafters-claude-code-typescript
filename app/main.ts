@@ -121,6 +121,7 @@ async function main() {
       message.push({ role: "user", content: prompt });
     }
   }
+  console.error(message);
   while (true) {
     const response = await client.chat.completions.create({
       model: "anthropic/claude-haiku-4.5",
