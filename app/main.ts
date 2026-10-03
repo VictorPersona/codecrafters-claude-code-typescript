@@ -153,7 +153,7 @@ async function main() {
 
   if (prompt.startsWith("/")) {
     const endIndex = prompt.indexOf(" ", 1);
-    const skill = prompt.slice(1);
+    const skill = prompt.slice(1, endIndex);
     console.error(skill);
     console.error(skillNames);
     if (skillNames.includes(skill)) {
