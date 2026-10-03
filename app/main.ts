@@ -43,7 +43,7 @@ async function main() {
   async function BashCall(bashCallParams: { command: string }) {
     const { stdout, stderr } = await newExec(bashCallParams.command);
 
-    return { stdout, stderr };
+    return JSON.stringify({ stdout, stderr });
   }
 
   const tools: Record<string, Function> = {
