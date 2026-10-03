@@ -79,16 +79,18 @@ async function main() {
   };
   const findFolders = async () => {
     const skills = [];
-    const dirs = await readdir(".claude/skills", { withFileTypes: true });
-    for (let index = 0; index < dirs.length; index++) {
-      const element = dirs[index];
-      if (element.isDirectory()) {
-        const filePath = path.join(
-          element.parentPath,
-          element.name,
-          "SKILL.md",
-        );
-        skills.push(await findSkill(filePath));
+    if (await skillsExists()) {
+      const dirs = await readdir(".claude/skills", { withFileTypes: true });
+      for (let index = 0; index < dirs.length; index++) {
+        const element = dirs[index];
+        if (element.isDirectory()) {
+          const filePath = path.join(
+            element.parentPath,
+            element.name,
+            "SKILL.md",
+          );
+          skills.push(await findSkill(filePath));
+        }
       }
     }
     return skills;
