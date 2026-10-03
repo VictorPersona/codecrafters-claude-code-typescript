@@ -54,19 +54,23 @@ async function main() {
         },
       ],
     });
-    message.push({ role: "assistant", content: response.object });
+    message.push({
+      role: "assistant",
+      content: response.choices[0].message.content,
+    });
 
     const tool_calls = response.choices[0].message.tool_calls;
     if (!tool_calls) {
       console.log(response.choices[0].message.content);
       break;
     }
-    tool_calls.forEach((element) => {
+    for (let index = 0; index < tool_calls.length; index++) {
+      const element = tool_calls[index];
       if (element.type == "function") {
         const toolToCall = tools[element.function.name];
         if (toolToCall) {
           const params = JSON.parse(element.function.arguments);
-          const result = toolToCall(params);
+          const result = await toolToCall(params);
           message.push({
             role: "tool",
             tool_call_id: element.id,
@@ -74,7 +78,7 @@ async function main() {
           });
         }
       }
-    });
+    }
   }
 
   // if (!response.choices || response.choices.length === 0) {
