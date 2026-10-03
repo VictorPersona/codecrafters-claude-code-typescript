@@ -62,7 +62,7 @@ async function main() {
       const firstMark = element.indexOf(": ");
       finalObjArray.push([
         element.slice(0, firstMark),
-        element.slice(firstMark),
+        element.slice(firstMark + 1),
       ]);
     }
     const formatterObj = Object.fromEntries(finalObjArray);
@@ -115,6 +115,8 @@ async function main() {
   if (prompt.startsWith("/")) {
     const endIndex = prompt.indexOf(" ", 1);
     const skill = prompt.slice(1, endIndex);
+    console.error(skill);
+    console.error(skillNames);
     if (skillNames.includes(skill)) {
       message.push({ role: "user", content: await loadSkill(skill) });
     } else {
