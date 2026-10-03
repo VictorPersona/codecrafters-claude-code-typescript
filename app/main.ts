@@ -55,12 +55,17 @@ async function main() {
     const first = data.indexOf("---");
     const second = data.indexOf("---", first + 3);
     const formatterText = data.slice(first + 3, second);
-    const formatterObj = Object.fromEntries(
-      formatterText
-        .trim()
-        .split("\n")
-        .map((line) => line.split(": ")),
-    );
+    const formatArray = formatterText.trim().split("\n");
+    const finalObjArray = [];
+    for (let index = 0; index < formatArray.length; index++) {
+      const element = formatArray[index];
+      const firstMark = element.indexOf(": ");
+      finalObjArray.push([
+        element.slice(0, firstMark),
+        element.slice(firstMark),
+      ]);
+    }
+    const formatterObj = Object.fromEntries(finalObjArray);
     return formatterObj;
   };
   const findFolders = async () => {
@@ -79,11 +84,26 @@ async function main() {
     }
     return skills;
   };
+
+  const loadSkill = async (skillname: string) => {
+    const skillpath = path.join(
+      process.cwd(),
+      ".claude/slills",
+      "skillname",
+      "SKILL.md",
+    );
+    const data = await ReadFile({ file_path: skillpath });
+    const secondIndex = data.indexOf("---", 4);
+    return data.slice(secondIndex + 1);
+  };
+
+  const skillNames: string[] = [];
   const advertiseSkills = async () => {
     const skills = await findFolders();
     let systemPrompt = "You have access to the following skills:\n\n";
     for (let index = 0; index < skills.length; index++) {
       const element = skills[index];
+      skillNames.push(element.name);
       const entry = element.name + ": " + element.description + "\n";
       systemPrompt = systemPrompt.concat(entry);
     }
@@ -91,8 +111,16 @@ async function main() {
   };
   let message: ChatCompletionMessageParam[] = [
     { role: "system", content: await advertiseSkills() },
-    { role: "user", content: prompt },
   ];
+  if (prompt.startsWith("/")) {
+    const endIndex = prompt.indexOf(" ", 1);
+    const skill = prompt.slice(1, endIndex);
+    if (skillNames.includes(skill)) {
+      message.push({ role: "user", content: await loadSkill(skill) });
+    } else {
+      message.push({ role: "user", content: prompt });
+    }
+  }
   while (true) {
     const response = await client.chat.completions.create({
       model: "anthropic/claude-haiku-4.5",
