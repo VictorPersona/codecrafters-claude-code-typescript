@@ -103,8 +103,9 @@ async function main() {
     let systemPrompt = "You have access to the following skills:\n\n";
     for (let index = 0; index < skills.length; index++) {
       const element = skills[index];
-      skillNames.push(element.name);
-      const entry = element.name + ": " + element.description + "\n";
+      skillNames.push(element.name.trim());
+      const entry =
+        element.name.trim() + ": " + element.description.trim() + "\n";
       systemPrompt = systemPrompt.concat(entry);
     }
     return systemPrompt;
