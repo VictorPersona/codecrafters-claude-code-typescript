@@ -119,13 +119,48 @@ async function main() {
   let message: ChatCompletionMessageParam[] = [
     { role: "system", content: await advertiseSkills() },
   ];
+
+  const agumentedSkillwithArgs = async <T extends { ARGUMENTS?: string }>(
+    skill: string,
+    argnt: T,
+  ) => {
+    const { ARGUMENTS = "" } = argnt;
+
+    let data = await loadSkill(skill);
+    const keys = Object.keys(argnt) as Array<keyof T>;
+    for (let i = 1; i < keys.length; i++) {
+      const key = keys[i];
+      if (Object.hasOwn(argnt, key)) {
+        const value = String(argnt[key] ?? "");
+        data = data.replaceAll(`$${String(key)}`, value);
+      }
+    }
+    return data;
+  };
+
+  const BuildArgs = () => {
+    let argsToLoad: any = {};
+    const splitedPrompt = prompt.split(" ");
+    let ARGUMENTS = "";
+    for (let i = 1; i < splitedPrompt.length; i++) {
+      argsToLoad[String(i)] = splitedPrompt[i];
+      ARGUMENTS += splitedPrompt[i] + " ";
+    }
+    ARGUMENTS = ARGUMENTS.trim();
+    argsToLoad = { ...argsToLoad, ARGUMENTS };
+    return argsToLoad;
+  };
+
   if (prompt.startsWith("/")) {
     const endIndex = prompt.indexOf(" ", 1);
     const skill = prompt.slice(1);
     console.error(skill);
     console.error(skillNames);
     if (skillNames.includes(skill)) {
-      message.push({ role: "user", content: await loadSkill(skill) });
+      message.push({
+        role: "user",
+        content: await agumentedSkillwithArgs(skill, BuildArgs()),
+      });
     } else {
       message.push({ role: "user", content: prompt });
     }
