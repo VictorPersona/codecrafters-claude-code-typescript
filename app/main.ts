@@ -128,7 +128,7 @@ async function main() {
 
     let data = await loadSkill(skill);
     const keys = Object.keys(argnt) as Array<keyof T>;
-    for (let i = 1; i < keys.length; i++) {
+    for (let i = 0; i < keys.length; i++) {
       const key = keys[i];
       if (Object.hasOwn(argnt, key)) {
         const value = String(argnt[key] ?? "");
