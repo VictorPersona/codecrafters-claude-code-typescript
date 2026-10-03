@@ -118,6 +118,8 @@ async function main() {
     } else {
       message.push({ role: "user", content: prompt });
     }
+  } else {
+    message.push({ role: "user", content: prompt });
   }
   console.error(message);
   while (true) {
