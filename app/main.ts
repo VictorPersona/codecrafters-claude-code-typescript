@@ -28,7 +28,18 @@ async function main() {
     const data = await fileToRead.text();
     return data;
   }
-  const tools: Record<string, Function> = { Read: ReadFile };
+
+  async function WriteFile(writeFileParmas: {
+    file_path: string;
+    content: string;
+  }): Promise<string> {
+    const fileToWrite = Bun.file(writeFileParmas.file_path);
+    await fileToWrite.write(writeFileParmas.content);
+    const check = writeFileParmas.content === (await fileToWrite.text());
+    return check ? "Write Successfull" : "Write Failed";
+  }
+
+  const tools: Record<string, Function> = { Read: ReadFile, Write: WriteFile };
 
   while (true) {
     const response = await client.chat.completions.create({
@@ -49,6 +60,27 @@ async function main() {
                 },
               },
               required: ["file_path"],
+            },
+          },
+        },
+        {
+          type: "function",
+          function: {
+            name: "Write",
+            description: "Write content to a file",
+            parameters: {
+              type: "object",
+              properties: {
+                file_path: {
+                  type: "string",
+                  description: "The path to the file to write",
+                },
+                content: {
+                  type: "string",
+                  description: "The content to write to the file",
+                },
+              },
+              required: ["file_path", "content"],
             },
           },
         },
