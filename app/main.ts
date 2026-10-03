@@ -40,12 +40,16 @@ async function main() {
   }
 
   async function BashCall(bashCallParams: { command: string }) {
-    exec(bashCallParams.command, (error, stdout, stderr) => {
-      if (error) {
-        return stderr;
-      }
-      return stdout;
-    });
+    const response = await exec(
+      bashCallParams.command,
+      (error, stdout, stderr) => {
+        if (error) {
+          return stderr;
+        }
+        return stdout;
+      },
+    );
+    return response;
   }
 
   const tools: Record<string, Function> = {
