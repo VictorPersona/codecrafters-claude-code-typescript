@@ -89,7 +89,7 @@ async function main() {
     const skillpath = path.join(
       process.cwd(),
       ".claude/slills",
-      "skillname",
+      skillname,
       "SKILL.md",
     );
     const data = await ReadFile({ file_path: skillpath });
