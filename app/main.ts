@@ -5,6 +5,7 @@ import { exec } from "node:child_process";
 import util from "node:util";
 import { readdir } from "node:fs/promises";
 import path from "node:path";
+import fs from "node:fs/promises";
 async function main() {
   const [, , flag, prompt] = process.argv;
   const apiKey = process.env.OPENROUTER_API_KEY;
@@ -67,6 +68,14 @@ async function main() {
     }
     const formatterObj = Object.fromEntries(finalObjArray);
     return formatterObj;
+  };
+  const skillsExists = async () => {
+    try {
+      await fs.stat(".claude/skills");
+      return true;
+    } catch (error) {
+      return false;
+    }
   };
   const findFolders = async () => {
     const skills = [];
