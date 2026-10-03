@@ -60,7 +60,7 @@ async function main() {
       tool_calls: response.choices[0].message.tool_calls,
     });
 
-    console.error(response);
+    console.error(response.choices[0]);
     const tool_calls = response.choices[0].message.tool_calls;
     if (!tool_calls || tool_calls.length == 0) {
       console.log(response.choices[0].message);
