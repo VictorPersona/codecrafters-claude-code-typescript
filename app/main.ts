@@ -3,6 +3,8 @@ import OpenAI from "openai";
 import type { ChatCompletionMessageParam } from "openai/resources";
 import { exec } from "node:child_process";
 import util from "node:util";
+import { readdir } from "node:fs/promises";
+import path from "node:path";
 async function main() {
   const [, , flag, prompt] = process.argv;
   const apiKey = process.env.OPENROUTER_API_KEY;
@@ -21,9 +23,6 @@ async function main() {
     baseURL: baseURL,
   });
 
-  let message: ChatCompletionMessageParam[] = [
-    { role: "user", content: prompt },
-  ];
   async function ReadFile(fileparams: { file_path: string }) {
     const fileToRead = Bun.file(fileparams.file_path);
     const data = await fileToRead.text();
@@ -51,7 +50,49 @@ async function main() {
     Write: WriteFile,
     Bash: BashCall,
   };
-
+  const findSkill = async (file_path: string) => {
+    const data = await ReadFile({ file_path });
+    const first = data.indexOf("---");
+    const second = data.indexOf("---", first + 3);
+    const formatterText = data.slice(first + 3, second);
+    const formatterObj = Object.fromEntries(
+      formatterText
+        .trim()
+        .split("\n")
+        .map((line) => line.split(": ")),
+    );
+    return formatterObj;
+  };
+  const findFolders = async () => {
+    const skills = [];
+    const dirs = await readdir(".claude/skills", { withFileTypes: true });
+    for (let index = 0; index < dirs.length; index++) {
+      const element = dirs[index];
+      if (element.isDirectory()) {
+        const filePath = path.join(
+          element.parentPath,
+          element.name,
+          "SKILL.md",
+        );
+        skills.push(await findSkill(filePath));
+      }
+    }
+    return skills;
+  };
+  const advertiseSkills = async () => {
+    const skills = await findFolders();
+    let systemPrompt = "You have access to the following skills:\n\n";
+    for (let index = 0; index < skills.length; index++) {
+      const element = skills[index];
+      const entry = element.name + ": " + element.description + "\n";
+      systemPrompt = systemPrompt.concat(entry);
+    }
+    return systemPrompt;
+  };
+  let message: ChatCompletionMessageParam[] = [
+    { role: "system", content: await advertiseSkills() },
+    { role: "user", content: prompt },
+  ];
   while (true) {
     const response = await client.chat.completions.create({
       model: "anthropic/claude-haiku-4.5",
