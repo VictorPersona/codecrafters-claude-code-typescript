@@ -138,40 +138,65 @@ async function main() {
     return data;
   };
 
+  //what we will have to do will be to first check which skills are there, so we can first, split on whitespace, then for loop with condition being that it is starting with / and the other condition is that the skill,exists wherever it stops we will start creating the args from there.
+  const skillsInvoked: string[] = [];
+  let argsToLoad: any = {};
+  const findSkillsCalled = (splittedPrompt: string[]) => {
+    for (let index = 0; index < splittedPrompt.length; index++) {
+      const element = splittedPrompt[index];
+      if (!element.startsWith("/")) return index;
+      if (!skillNames.includes(element.slice(1))) return index;
+      skillsInvoked.push(element.slice(1));
+    }
+    return splittedPrompt.length;
+  };
+
   const BuildArgs = () => {
-    let argsToLoad: any = {};
     const splitedPrompt = prompt.split(" ");
+    const index = findSkillsCalled(splitedPrompt);
     let ARGUMENTS = "";
-    for (let i = 1; i < splitedPrompt.length; i++) {
+    for (let i = index; i < splitedPrompt.length; i++) {
       argsToLoad[String(i - 1)] = splitedPrompt[i];
       ARGUMENTS += splitedPrompt[i] + " ";
     }
     ARGUMENTS = ARGUMENTS.trim();
     argsToLoad = { ...argsToLoad, ARGUMENTS };
-    return argsToLoad;
   };
+  BuildArgs();
 
-  if (prompt.startsWith("/")) {
-    const firstSpaceIndex = prompt.indexOf(" ");
-
-    const skill =
-      firstSpaceIndex === -1
-        ? prompt.slice(1)
-        : prompt.slice(1, firstSpaceIndex);
-
-    console.error(skill);
-    console.error(skillNames);
-    if (skillNames.includes(skill)) {
+  if (skillsInvoked.length != 0) {
+    for (let index = 0; index < skillsInvoked.length; index++) {
+      const element = skillsInvoked[index];
       message.push({
         role: "user",
-        content: await agumentedSkillwithArgs(skill, BuildArgs()),
+        content: await agumentedSkillwithArgs(element, argsToLoad),
       });
-    } else {
-      message.push({ role: "user", content: prompt });
     }
   } else {
     message.push({ role: "user", content: prompt });
   }
+
+  // if (prompt.startsWith("/")) {
+  //   const firstSpaceIndex = prompt.indexOf(" ");
+
+  //   const skill =
+  //     firstSpaceIndex === -1
+  //       ? prompt.slice(1)
+  //       : prompt.slice(1, firstSpaceIndex);
+
+  //   console.error(skill);
+  //   console.error(skillNames);
+  //   if (skillNames.includes(skill)) {
+  //     message.push({
+  //       role: "user",
+  //       content: await agumentedSkillwithArgs(skill, BuildArgs()),
+  //     });
+  //   } else {
+  //     message.push({ role: "user", content: prompt });
+  //   }
+  // } else {
+  //   message.push({ role: "user", content: prompt });
+  // }
   console.error(message);
   while (true) {
     const response = await client.chat.completions.create({
