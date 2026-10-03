@@ -1,7 +1,7 @@
 import { file } from "bun";
 import OpenAI from "openai";
 import type { ChatCompletionMessageParam } from "openai/resources";
-
+import { exec } from "node:child_process";
 async function main() {
   const [, , flag, prompt] = process.argv;
   const apiKey = process.env.OPENROUTER_API_KEY;
@@ -37,6 +37,15 @@ async function main() {
     await fileToWrite.write(writeFileParmas.content);
     const check = writeFileParmas.content === (await fileToWrite.text());
     return check ? "Write Successfull" : "Write Failed";
+  }
+
+  async function BashCall(bashCallParams: { command: string }) {
+    exec(bashCallParams.command, (error, stdout, stderr) => {
+      if (error) {
+        return stderr;
+      }
+      return stdout;
+    });
   }
 
   const tools: Record<string, Function> = { Read: ReadFile, Write: WriteFile };
@@ -81,6 +90,23 @@ async function main() {
                 },
               },
               required: ["file_path", "content"],
+            },
+          },
+        },
+        {
+          type: "function",
+          function: {
+            name: "Bash",
+            description: "Perform Bash Call",
+            parameters: {
+              type: "object",
+              required: ["command"],
+              properties: {
+                command: {
+                  type: "string",
+                  description: "The command to execute through the bash call",
+                },
+              },
             },
           },
         },
