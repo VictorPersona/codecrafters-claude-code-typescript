@@ -48,7 +48,11 @@ async function main() {
     });
   }
 
-  const tools: Record<string, Function> = { Read: ReadFile, Write: WriteFile };
+  const tools: Record<string, Function> = {
+    Read: ReadFile,
+    Write: WriteFile,
+    Bash: BashCall,
+  };
 
   while (true) {
     const response = await client.chat.completions.create({
