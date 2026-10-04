@@ -46,19 +46,11 @@ async function main() {
     return JSON.stringify({ stdout, stderr });
   }
 
-  async function SkillFunctionForLoadingByAgent(command: string) {
-    const { argsToLoad, skillsInvoked } = BuildArgs(command, []);
-    const data = [];
-    if (skillsInvoked.length != 0) {
-      for (let index = 0; index < skillsInvoked.length; index++) {
-        const element = skillsInvoked[index];
-        data.push({
-          SkillName: element,
-          content: await agumentedSkillwithArgs(element, argsToLoad),
-        });
-      }
-    }
-    return data;
+  async function SkillFunctionForLoadingByAgent(skillInvocationCommand: {
+    name: string;
+    args: string;
+  }) {
+    return await loadSkill(skillInvocationCommand.name);
   }
 
   const tools: Record<string, Function> = {
