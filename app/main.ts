@@ -281,11 +281,17 @@ async function main() {
         const toolToCall = tools[element.function.name];
         if (toolToCall) {
           const params = JSON.parse(element.function.arguments);
-          const result = await toolToCall(params);
+          let result = "";
+          try {
+            result = await toolToCall(params);
+          } catch (error: any) {
+            result = error.message ?? error;
+          }
+
           message.push({
             role: "tool",
             tool_call_id: element.id,
-            content: result,
+            content: String(result),
           });
         }
       }
