@@ -60,12 +60,15 @@ async function main() {
     if (skillObj.context == undefined || skillObj.context != "fork") {
       return await loadSkill(skillInvocationCommand.name);
     }
-    const msgs = await invokeAgent([
-      {
-        role: "user",
-        content: await loadSkill(skillInvocationCommand.name),
-      },
-    ]);
+    const msgs = await invokeAgent(
+      [
+        {
+          role: "user",
+          content: await loadSkill(skillInvocationCommand.name),
+        },
+      ],
+      toolsAvailable,
+    );
     return `Skill ${skillInvocationCommand.name} ran in a separate context and returned: ${msgs[msgs.length - 1].content}`;
   }
 
@@ -310,6 +313,7 @@ async function main() {
 
   const invokeAgent = async (
     message: OpenAI.Chat.Completions.ChatCompletionMessageParam[],
+    toolsAvailable: OpenAI.Chat.Completions.ChatCompletionTool[],
   ) => {
     while (true) {
       const response = await client.chat.completions.create({
@@ -354,7 +358,7 @@ async function main() {
     }
     return message;
   };
-  message = await invokeAgent(message);
+  message = await invokeAgent(message, toolsAvailable);
 
   // if (!response.choices || response.choices.length === 0) {
   //   throw new Error("no choices in response");
