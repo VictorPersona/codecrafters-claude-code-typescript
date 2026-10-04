@@ -208,7 +208,8 @@ async function main() {
           type: "function",
           function: {
             name: "Read",
-            description: "Read and return the contents of a file",
+            description:
+              "Read and return the contents of a file. Can only read the file not a directory. User Bash tool to access directory",
             parameters: {
               type: "object",
               properties: {
