@@ -50,7 +50,23 @@ async function main() {
     name: string;
     args: string;
   }) {
-    return await loadSkill(skillInvocationCommand.name);
+    const skills = await findFolders();
+    const skillObj = skills.find(
+      (skill) => skill.name == skillInvocationCommand.name,
+    );
+    if (skillObj == undefined) {
+      return `No skill with name ${skillInvocationCommand.name} exists`;
+    }
+    if (skillObj.context == undefined || skillObj.context != "fork") {
+      return await loadSkill(skillInvocationCommand.name);
+    }
+    const msgs = await invokeAgent([
+      {
+        role: "user",
+        content: await loadSkill(skillInvocationCommand.name),
+      },
+    ]);
+    return `Skill ${skillInvocationCommand.name} ran in a separate context and returned: ${msgs[msgs.length - 1].content}`;
   }
 
   const tools: Record<string, Function> = {
@@ -189,6 +205,86 @@ async function main() {
     message.push({ role: "user", content: prompt });
   }
 
+  const toolsAvailable: OpenAI.Chat.Completions.ChatCompletionTool[] = [
+    {
+      type: "function",
+      function: {
+        name: "Read",
+        description:
+          "Read and return the contents of a file. Can only read the file not a directory. User Bash tool to access directory",
+        parameters: {
+          type: "object",
+          properties: {
+            file_path: {
+              type: "string",
+              description: "The path to the file to read",
+            },
+          },
+          required: ["file_path"],
+        },
+      },
+    },
+    {
+      type: "function",
+      function: {
+        name: "Write",
+        description: "Write content to a file",
+        parameters: {
+          type: "object",
+          properties: {
+            file_path: {
+              type: "string",
+              description: "The path to the file to write",
+            },
+            content: {
+              type: "string",
+              description: "The content to write to the file",
+            },
+          },
+          required: ["file_path", "content"],
+        },
+      },
+    },
+    {
+      type: "function",
+      function: {
+        name: "Bash",
+        description: "Perform Bash Call",
+        parameters: {
+          type: "object",
+          required: ["command"],
+          properties: {
+            command: {
+              type: "string",
+              description: "The command to execute through the bash call",
+            },
+          },
+        },
+      },
+    },
+    {
+      type: "function",
+      function: {
+        name: "Skill",
+        description: "Load a skill's instructions into the conversation",
+        parameters: {
+          type: "object",
+          required: ["name"],
+          properties: {
+            name: {
+              type: "string",
+              description: "The name of the skill to use",
+            },
+            args: {
+              type: "string",
+              description: "Optional arguments for the skill",
+            },
+          },
+        },
+      },
+    },
+  ];
+
   // if (prompt.startsWith("/")) {
   //   const firstSpaceIndex = prompt.indexOf(" ");
 
@@ -211,125 +307,54 @@ async function main() {
   //   message.push({ role: "user", content: prompt });
   // }
   console.error(message);
-  while (true) {
-    const response = await client.chat.completions.create({
-      model: "anthropic/claude-haiku-4.5",
-      messages: message,
-      tools: [
-        {
-          type: "function",
-          function: {
-            name: "Read",
-            description:
-              "Read and return the contents of a file. Can only read the file not a directory. User Bash tool to access directory",
-            parameters: {
-              type: "object",
-              properties: {
-                file_path: {
-                  type: "string",
-                  description: "The path to the file to read",
-                },
-              },
-              required: ["file_path"],
-            },
-          },
-        },
-        {
-          type: "function",
-          function: {
-            name: "Write",
-            description: "Write content to a file",
-            parameters: {
-              type: "object",
-              properties: {
-                file_path: {
-                  type: "string",
-                  description: "The path to the file to write",
-                },
-                content: {
-                  type: "string",
-                  description: "The content to write to the file",
-                },
-              },
-              required: ["file_path", "content"],
-            },
-          },
-        },
-        {
-          type: "function",
-          function: {
-            name: "Bash",
-            description: "Perform Bash Call",
-            parameters: {
-              type: "object",
-              required: ["command"],
-              properties: {
-                command: {
-                  type: "string",
-                  description: "The command to execute through the bash call",
-                },
-              },
-            },
-          },
-        },
-        {
-          type: "function",
-          function: {
-            name: "Skill",
-            description: "Load a skill's instructions into the conversation",
-            parameters: {
-              type: "object",
-              required: ["name"],
-              properties: {
-                name: {
-                  type: "string",
-                  description: "The name of the skill to use",
-                },
-                args: {
-                  type: "string",
-                  description: "Optional arguments for the skill",
-                },
-              },
-            },
-          },
-        },
-      ],
-    });
-    message.push({
-      role: "assistant",
-      content: response.choices[0].message.content,
-      tool_calls: response.choices[0].message.tool_calls,
-    });
 
-    console.error(response.choices[0]);
-    console.error(JSON.stringify(response.choices[0].message.tool_calls));
-    const tool_calls = response.choices[0].message.tool_calls;
-    if (!tool_calls || tool_calls.length == 0) {
-      console.log(response.choices[0].message.content);
-      break;
-    }
-    for (let index = 0; index < tool_calls.length; index++) {
-      const element = tool_calls[index];
-      if (element.type == "function") {
-        const toolToCall = tools[element.function.name];
-        if (toolToCall) {
-          const params = JSON.parse(element.function.arguments);
-          let result = "";
-          try {
-            result = await toolToCall(params);
-          } catch (error: any) {
-            result = error.message ?? error;
+  const invokeAgent = async (
+    message: OpenAI.Chat.Completions.ChatCompletionMessageParam[],
+  ) => {
+    while (true) {
+      const response = await client.chat.completions.create({
+        model: "anthropic/claude-haiku-4.5",
+        messages: message,
+        tools: toolsAvailable,
+      });
+      message.push({
+        role: "assistant",
+        content: response.choices[0].message.content,
+        tool_calls: response.choices[0].message.tool_calls,
+      });
+
+      console.error(response.choices[0]);
+      console.error(JSON.stringify(response.choices[0].message.tool_calls));
+      const tool_calls = response.choices[0].message.tool_calls;
+      if (!tool_calls || tool_calls.length == 0) {
+        console.log(response.choices[0].message.content);
+        break;
+      }
+      for (let index = 0; index < tool_calls.length; index++) {
+        const element = tool_calls[index];
+        if (element.type == "function") {
+          const toolToCall = tools[element.function.name];
+          if (toolToCall) {
+            const params = JSON.parse(element.function.arguments);
+            let result = "";
+            try {
+              result = await toolToCall(params);
+            } catch (error: any) {
+              result = error.message ?? error;
+            }
+
+            message.push({
+              role: "tool",
+              tool_call_id: element.id,
+              content: String(result),
+            });
           }
-
-          message.push({
-            role: "tool",
-            tool_call_id: element.id,
-            content: String(result),
-          });
         }
       }
     }
-  }
+    return message;
+  };
+  message = await invokeAgent(message);
 
   // if (!response.choices || response.choices.length === 0) {
   //   throw new Error("no choices in response");
