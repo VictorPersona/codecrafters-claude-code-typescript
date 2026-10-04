@@ -25,9 +25,13 @@ async function main() {
   });
 
   async function ReadFile(fileparams: { file_path: string }) {
-    const fileToRead = Bun.file(fileparams.file_path);
-    const data = await fileToRead.text();
-    return data;
+    try {
+      const fileToRead = Bun.file(fileparams.file_path);
+      const data = await fileToRead.text();
+      return data;
+    } catch (error) {
+      return error;
+    }
   }
 
   async function WriteFile(writeFileParmas: {
@@ -99,9 +103,9 @@ async function main() {
   const loadSkill = async (skillname: string) => {
     const skillpath = path.join(".claude/skills", skillname, "SKILL.md");
     const data = await ReadFile({ file_path: skillpath });
-    const firstPart = `Skill: ${skillname} (located at ${path.join(".claude/skills", skillname)}) \n Paths in the instructions below are realtive to that folder`;
+    const firstPart = `Skill: ${skillname} (located at ${path.join(".claude/skills", skillname)}) \n Paths in the instructions below are realtive to that folder \n`;
     const secondIndex = data.indexOf("---", 4);
-    return `${firstPart}+${data.slice(secondIndex + 3)}`;
+    return `${firstPart} \n  ${data.slice(secondIndex + 3)}`;
   };
 
   const skillNames: string[] = [];
