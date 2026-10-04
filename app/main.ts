@@ -99,7 +99,7 @@ async function main() {
   const loadSkill = async (skillname: string) => {
     const skillpath = path.join(".claude/skills", skillname, "SKILL.md");
     const data = await ReadFile({ file_path: skillpath });
-    const firstPart = `Skill: ${skillname} (located at ${path.join(".claude.skills", skillname)}) \n Paths in the instructions below are realtive to that folder`;
+    const firstPart = `Skill: ${skillname} (located at ${path.join(".claude/skills", skillname)}) \n Paths in the instructions below are realtive to that folder`;
     const secondIndex = data.indexOf("---", 4);
     return `${firstPart}+${data.slice(secondIndex + 3)}`;
   };
