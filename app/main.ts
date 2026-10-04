@@ -46,10 +46,26 @@ async function main() {
     return JSON.stringify({ stdout, stderr });
   }
 
+  async function SkillFunctionForLoadingByAgent(command: string) {
+    const { argsToLoad, skillsInvoked } = BuildArgs(command, []);
+    const data = [];
+    if (skillsInvoked.length != 0) {
+      for (let index = 0; index < skillsInvoked.length; index++) {
+        const element = skillsInvoked[index];
+        data.push({
+          SkillName: element,
+          content: await agumentedSkillwithArgs(element, argsToLoad),
+        });
+      }
+    }
+    return data;
+  }
+
   const tools: Record<string, Function> = {
     Read: ReadFile,
     Write: WriteFile,
     Bash: BashCall,
+    Skill: SkillFunctionForLoadingByAgent,
   };
   const findSkill = async (file_path: string) => {
     const data = await ReadFile({ file_path });
@@ -140,9 +156,11 @@ async function main() {
   };
 
   //what we will have to do will be to first check which skills are there, so we can first, split on whitespace, then for loop with condition being that it is starting with / and the other condition is that the skill,exists wherever it stops we will start creating the args from there.
-  const skillsInvoked: string[] = [];
-  let argsToLoad: any = {};
-  const findSkillsCalled = (splittedPrompt: string[]) => {
+
+  const findSkillsCalled = (
+    splittedPrompt: string[],
+    skillsInvoked: string[],
+  ) => {
     for (let index = 0; index < splittedPrompt.length; index++) {
       const element = splittedPrompt[index];
       if (!element.startsWith("/")) return index;
@@ -152,9 +170,10 @@ async function main() {
     return splittedPrompt.length;
   };
 
-  const BuildArgs = () => {
-    const splitedPrompt = prompt.split(" ");
-    const index = findSkillsCalled(splitedPrompt);
+  const BuildArgs = (givenPrompt: string, skillsInvoked: string[]) => {
+    let argsToLoad: any = {};
+    const splitedPrompt = givenPrompt.split(" ");
+    const index = findSkillsCalled(splitedPrompt, skillsInvoked);
     let ARGUMENTS = "";
     for (let i = index; i < splitedPrompt.length; i++) {
       argsToLoad[String(i - 1)] = splitedPrompt[i];
@@ -162,8 +181,9 @@ async function main() {
     }
     ARGUMENTS = ARGUMENTS.trim();
     argsToLoad = { ...argsToLoad, ARGUMENTS };
+    return { argsToLoad, skillsInvoked };
   };
-  BuildArgs();
+  const { argsToLoad, skillsInvoked } = BuildArgs(prompt, []);
 
   if (skillsInvoked.length != 0) {
     for (let index = 0; index < skillsInvoked.length; index++) {
@@ -255,6 +275,27 @@ async function main() {
                 command: {
                   type: "string",
                   description: "The command to execute through the bash call",
+                },
+              },
+            },
+          },
+        },
+        {
+          type: "function",
+          function: {
+            name: "Skill",
+            description: "Load a skill's instructions into the conversation",
+            parameters: {
+              type: "object",
+              required: ["name"],
+              properties: {
+                name: {
+                  type: "string",
+                  description: "The name of the skill to use",
+                },
+                args: {
+                  type: "string",
+                  description: "Optional arguments for the skill",
                 },
               },
             },
