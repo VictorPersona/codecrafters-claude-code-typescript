@@ -89,8 +89,8 @@ async function main() {
       const element = formatArray[index];
       const firstMark = element.indexOf(": ");
       finalObjArray.push([
-        element.slice(0, firstMark),
-        element.slice(firstMark + 1),
+        element.slice(0, firstMark).trim(),
+        element.slice(firstMark + 1).trim(),
       ]);
     }
     const formatterObj = Object.fromEntries(finalObjArray);
