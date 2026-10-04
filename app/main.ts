@@ -25,13 +25,9 @@ async function main() {
   });
 
   async function ReadFile(fileparams: { file_path: string }) {
-    try {
-      const fileToRead = Bun.file(fileparams.file_path);
-      const data = await fileToRead.text();
-      return data;
-    } catch (error) {
-      return error;
-    }
+    const fileToRead = Bun.file(fileparams.file_path);
+    const data = await fileToRead.text();
+    return data;
   }
 
   async function WriteFile(writeFileParmas: {
